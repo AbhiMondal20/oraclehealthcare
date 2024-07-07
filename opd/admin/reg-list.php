@@ -59,13 +59,13 @@ include ('header.php');
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $sql = "SELECT TOP 900 id, rno, opid, rdate, rtime, rfname, CONCAT(rfname, ' ', COALESCE(rmname, ''), ' ', rlname) AS fullname, rsex, rage, fname, phone, radd1, rcity, rdist, wamt, addedBy, uploadPrescription
-                                    FROM registration ";
-                                    $stmt = sqlsrv_query($conn, $sql);
+                                    $sql = "SELECT id, rno, opid, rdate, rtime, rfname, CONCAT(rfname, ' ', COALESCE(rmname, ''), ' ', rlname) AS fullname, rsex, rage, fname, phone, radd1, rcity, rdist, wamt, addedBy, uploadPrescription
+                                    FROM registration";
+                                    $stmt = mysqli_query($conn, $sql);
                                     if ($stmt === false) {
-                                        die(print_r(sqlsrv_errors(), true));
+                                        die(print_r(mysqli_errors(), true));
                                     }
-                                    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+                                    while ($row = mysqli_fetch_array($stmt)) {
                                         $rno = $row['rno'];
                                         $id = $row['id'];
                                         $rfname = $row['rfname'];
@@ -79,7 +79,7 @@ include ('header.php');
                                             </td>
                                             <td>
                                                 <?php echo $row['rdate']; ?>
-                                                <?php echo $row['rtime']->format('h:m:s'); ?>
+                                                <?php echo $row['rtime']; ?>
                                             </td>
                                             <td>
                                                 <?php echo $row['fullname']; ?>

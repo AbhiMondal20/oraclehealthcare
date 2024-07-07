@@ -37,13 +37,13 @@ $opid = $_GET['opid'];
 $rno = $_GET['rno'];
 
 $sql = "SELECT uploadPrescription FROM registration WHERE rno = '$rno' AND opid = '$opid'";
-$stmt = sqlsrv_query($conn, $sql);
+$stmt = mysqli_query($conn, $sql);
 
 if ($stmt === false) {
-    echo "Error fetching data: " . print_r(sqlsrv_errors(), true);
+    echo "Error fetching data: " . print_r(mysqli_errors(), true);
 } else {
-    if (sqlsrv_has_rows($stmt)) {
-        while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+    if (mysqli_num_rows($stmt)) {
+        while ($row = mysqli_fetch_array($stmt, MYSQLI_ASSOC)) {
             $uploadedFiles = explode(', ', $row['uploadPrescription']);
             foreach ($uploadedFiles as $file) {
                 echo "<div>";
@@ -63,7 +63,6 @@ if ($stmt === false) {
     } else {
         echo "No data found";
     }
-    sqlsrv_free_stmt($stmt);
 }
 ?>
 

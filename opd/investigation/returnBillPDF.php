@@ -7,63 +7,69 @@ $mpdf = new \Mpdf\Mpdf([
     'allow_remote_images' => true,
     'debug' => true,
 ]);
+
 $mpdf->SetTitle('Rhythm - Bill Return ');
 $rno1 = isset($_GET['rno']) ? $_GET['rno'] : '';
 $billno1 = isset($_GET['billno']) ? $_GET['billno'] : '';
 $billdate = isset($_GET['billdate']) ? $_GET['billdate'] : '';
-
 if (!empty($rno1) && !empty($billno1)) {
+    $rno1 = $conn->real_escape_string($rno1);
+    $billno1 = $conn->real_escape_string($billno1);
+    $billdate = $conn->real_escape_string($billdate);
+
+    // SQL query
     $sql1 = "SELECT bd.pname AS pname, 
-                bd.phone AS phone, 
-                bd.rdocname AS rdocname,
-                bd.billdate AS billdate, 
-                bd.totalPrice AS totalPrice, 
-                bd.totalAdj AS totalAdj, 
-                bd.gst AS gst, 
-                bd.billAmount AS billAmount, 
-                bd.paidAmount AS paidAmount, 
-                bd.balance AS balance, 
-                bd.status AS status, 
-                bd.rtime AS rtime,
-                rs.rage AS rage, 
-                rs.rsex AS rsex,
-                rs.radd1 AS add1,
-                rs.radd2 AS add2,
-                rs.rcity AS city,
-                rs.opid AS opid
-                FROM returnbillingDetails AS bd 
-                INNER JOIN registration AS rs 
-                ON bd.rno = rs.rno
-                WHERE bd.rno = ? AND bd.billno = ? AND bd.billdate = ?";
+                    bd.phone AS phone, 
+                    bd.rdocname AS rdocname,
+                    bd.billdate AS billdate, 
+                    bd.totalPrice AS totalPrice, 
+                    bd.totalAdj AS totalAdj, 
+                    bd.gst AS gst, 
+                    bd.billAmount AS billAmount, 
+                    bd.paidAmount AS paidAmount, 
+                    bd.balance AS balance, 
+                    bd.status AS status, 
+                    bd.rtime AS rtime,
+                    rs.rage AS rage, 
+                    rs.rsex AS rsex,
+                    rs.radd1 AS add1,
+                    rs.radd2 AS add2,
+                    rs.rcity AS city,
+                    rs.opid AS opid
+            FROM returnbillingDetails AS bd 
+            INNER JOIN registration AS rs 
+            ON bd.rno = rs.rno
+            WHERE bd.rno = '$rno1' AND bd.billno = '$billno1' AND bd.billdate = '$billdate'";
 
-    $params1 = array($rno1, $billno1, $billdate);
-    $stmt1 = sqlsrv_query($conn, $sql1, $params1);
-
-    if ($stmt1 === false) {
-        die(print_r(sqlsrv_errors(), true));
+    // Execute query
+    $result1 = $conn->query($sql1);
+    if ($result1 === false) {
+        die("Error executing query: " . $conn->error);
     }
-    if ($row = sqlsrv_fetch_array($stmt1, SQLSRV_FETCH_ASSOC)) {
+    if ($result1->num_rows > 0) {
+        $row = $result1->fetch_assoc();
         $pname = $row['pname'];
         $phone = $row['phone'];
+        $rdocname = $row['rdocname'];
         $billdate = $row['billdate'];
         $totalPrice = $row['totalPrice'];
-        $rdocname = $row['rdocname'];
         $totalAdj = $row['totalAdj'];
         $gst = $row['gst'];
         $billAmount = $row['billAmount'];
         $paidAmount = $row['paidAmount'];
         $balance = $row['balance'];
         $status = $row['status'];
-        $gender = $row['rsex'];
+        $rtime = $row['rtime'];
         $age = $row['rage'];
+        $gender = $row['rsex'];
         $add1 = $row['add1'];
         $add2 = $row['add2'];
         $city = $row['city'];
         $opid = $row['opid'];
+        $result1->free();
     } else {
         echo "No data found for the provided rno and billno.";
     }
-    sqlsrv_free_stmt($stmt1);
 }
 
 $header = '
@@ -99,32 +105,30 @@ $html2 = '<table style="margin: 0 auto; padding: 0px;">
         </tr>
     </thead>
     <tbody>';
-$sql = "SELECT b.servname, b.servrate
-    FROM returnBilling AS b 
-    WHERE b.rno = '$rno1' AND b.billno = '$billno1'
-    GROUP BY b.servname, b.servrate";
 
-$params = array($rno1, $billno1);
-$stmt = sqlsrv_query($conn, $sql, $params);
+$sql = "SELECT b.servname, b.servrate
+        FROM returnBilling AS b 
+        WHERE b.rno = '$rno1' AND b.billno = '$billno1'
+        GROUP BY b.servname, b.servrate";
+        
+
+$stmt = mysqli_query($conn, $sql);
 $sno = 0;
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));
+    die(print_r(mysqli_errors(), true));
 }
 
 $subtotal = 0;
 $footer = '';
-
-// Count the total number of rows returned from the SQL query
-$totalRows = sqlsrv_num_rows($stmt);
+$totalRows = mysqli_num_rows($stmt);
 $rowCount = 0;
 $servrateTotal = 0;
-while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+while ($row = mysqli_fetch_array($stmt, MYSQLI_ASSOC)) {
     $sno++;
     $servname = $row['servname'];
     $servrate = $row['servrate'];
     $subtotal = $servrate;
     $servrateTotal += $subtotal;
-    // Add row to HTML
     $html2 .= '<tr>
                     <td style="padding: 0 50px;">' . $sno . '</td>
                     <td style="padding: 0 ;">' . $servname . '</td>
@@ -184,7 +188,6 @@ $mpdf->WriteHTML($html2);
 $mpdf->SetFooter('');
 $mpdf->SetHTMLFooter($Last_footer);
 // $pdf->SetTitle('Bill Cum Receipt');
-
 // $mpdf-> AddPage();
 // $mpdf-> AddPage();
 $css = file_get_contents('css/pdfcss.css');

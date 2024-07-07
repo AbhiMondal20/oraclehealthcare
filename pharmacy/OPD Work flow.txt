@@ -1,0 +1,47 @@
+User A
+	- OPD Dr registration 
+USER b
+	- Investigation (lab/ecg/xray)
+
+USER C (Admin) Reports
+
+User (only user)
+OPD
+- DoctorRegistration Fee
+	- Doctor fee billing
+	- Patient list (full patient list) (duplicate bill/ kunsa dr)
+	- User wise report
+		- kitna doctor ka collect kiya
+		- Total cash
+		- Daily cash / credit / gpay 
+
+- OPD Investigation
+	- Registration
+		- DoctorRegistration say uthayaga Name age dr
+		- New registration
+	- User wise report
+		- Total cash
+		- Daily cash / credit / gpay
+
+User (Admin user)
+OPD
+- Patient list (full patient list) (duplicate bill/ kunsa dr)
+- All User wise report
+	- kitna doctor ka collect kiya
+	- Total cash (user wise / total all user)
+	- Daily cash / credit / gpay 
+
+- OPD Investigation
+	- User wise report
+	- Total cash (user wise / total all user)
+	- Daily cash / credit / gpay 
+
+
+Investigation test
+- 1 test (CBC) Ek bar registration may ek hi bar hoga
+- c
+Repeat patient:
+Mobile:
+RegID:
+InvID:
+OPDID:

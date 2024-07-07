@@ -9,11 +9,11 @@ include ('header.php');
 $next_rno = $_GET['rno'];
 $sql = "SELECT rno, se,opid, rdate, rtime, paymentType, rtitle, rfname, rmname, addedBy, rlname, rsex, rage, fname, radd1, radd2, rcity, rdist, rstate, phone, dept, rdoc, rdocname, wamt, rcountry
 FROM registration WHERE rno = '$next_rno'";
-$stmt = sqlsrv_query($conn, $sql);
+$stmt = mysqli_query($conn, $sql);
 if ($stmt === false) {
-    die(print_r(sqlsrv_errors(), true));
+    die(print_r(mysqli_errors(), true));
 }
-while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+while ($row = mysqli_fetch_array($stmt, MYSQLI_ASSOC)) {
     $se = $row['se'];
     $rdate = $row['rdate'];
     $opid = $row['opid'];
@@ -120,11 +120,11 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
                                             <select class="form-select select2" name="rtitle">
                                                 <?php
                                                 $sql = "SELECT title FROM titlemaster";
-                                                $stmt = sqlsrv_query($conn, $sql);
+                                                $stmt = mysqli_query($conn, $sql);
                                                 if ($stmt === false) {
-                                                    die(print_r(sqlsrv_errors(), true));
+                                                    die(print_r(mysqli_errors(), true));
                                                 } else {
-                                                    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+                                                    while ($row = mysqli_fetch_array($stmt, MYSQLI_ASSOC)) {
                                                         $title = $row['title'];
                                                         echo '<option value="' . $title . '"';
                                                         if ($title == $rtitle) {
@@ -259,11 +259,11 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
                                                 <option selected disabled>Select City</option>
                                                 <?php
                                                 $sql = "SELECT Cityname FROM citymaster";
-                                                $stmt = sqlsrv_query($conn, $sql);
+                                                $stmt = mysqli_query($conn, $sql);
                                                 if ($stmt === false) {
-                                                    die(print_r(sqlsrv_errors(), true));
+                                                    die(print_r(mysqli_errors(), true));
                                                 } else {
-                                                    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+                                                    while ($row = mysqli_fetch_array($stmt, MYSQLI_ASSOC)) {
                                                         $Cityname = $row['Cityname'];
                                                         echo '<option value="' . $Cityname . '"';
                                                         if ($Cityname == $rcity) {
@@ -560,15 +560,15 @@ if (isset($_POST['save'])) {
     // Prepare the SQL statement using prepared statements to prevent SQL injection
     $sql = "UPDATE registration SET visitType = ?, visitDate = ? WHERE rno = ? AND opid = ?";
     $params = array($visitType, $revisitDate, $rno, $opid);
-    $stmt = sqlsrv_prepare($conn, $sql, $params);
+    $stmt = mysqli_prepare($conn, $sql, $params);
 
     // Execute the prepared statement
     if ($stmt === false) {
-        die(print_r(sqlsrv_errors(), true));
+        die(print_r(mysqli_errors(), true));
     }
 
-    if (sqlsrv_execute($stmt) === false) {
-        die(print_r(sqlsrv_errors(), true));
+    if (mysqli_execute($stmt) === false) {
+        die(print_r(mysqli_errors(), true));
     } else {
         // Output success message and redirect to PDF page
         echo '<script>
@@ -580,7 +580,7 @@ if (isset($_POST['save'])) {
     }
 
     // Clean up resources
-    sqlsrv_free_stmt($stmt);
+    mysqli_free_stmt($stmt);
 }
 
 // window.location.href = "reg-pdf?opid=' . $opid . '&rno=' . $rno . '";

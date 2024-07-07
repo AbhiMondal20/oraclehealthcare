@@ -1,0 +1,203 @@
+<?php
+include ('function.php');
+
+require ('../vendor/autoload.php');
+$mpdf = new \Mpdf\Mpdf([
+    'mode' => 'utf-8',
+    'format' => 'A5-L',
+    'allow_remote_images' => true,
+    'debug' => true,
+]);
+
+
+$rno1 = isset($_GET['rno']) ? $_GET['rno'] : '';
+$billno1 = isset($_GET['billno']) ? $_GET['billno'] : '';
+$billdate = isset($_GET['billdate']) ? $_GET['billdate'] : '';
+
+if (!empty($rno1) && !empty($billno1) && !empty($billdate)) {
+    $sql1 = "SELECT bd.pname AS pname,
+    bd.phone AS phone,
+    bd.rdocname AS rdocname,
+    bd.billdate AS billdate, 
+    bd.totalPrice AS totalPrice, 
+    bd.totalAdj AS totalAdj,
+    bd.gst AS gst,
+    bd.billAmount AS billAmount, 
+    bd.paidAmount AS paidAmount, 
+    bd.balance AS balance, 
+    bd.status AS status, 
+    bd.rtime AS rtime,
+    rs.rage AS rage, 
+    rs.rsex AS rsex,
+    rs.radd1 AS add1,
+    rs.radd2 AS add2,
+    rs.rcity AS city,
+    rs.opid AS opid
+FROM returnbillingDetails AS bd 
+INNER JOIN registration AS rs 
+ON bd.rno = rs.rno
+WHERE bd.rno = ? AND bd.billno = ? AND bd.billdate = ?";
+
+$stmt1 = mysqli_prepare($conn, $sql1);
+mysqli_stmt_bind_param($stmt1, "ii", $rno1, $billno1, $billdate);
+mysqli_stmt_execute($stmt1);
+$result1 = mysqli_stmt_get_result($stmt1);
+
+if (!$result1) {
+    die(mysqli_error($conn));
+}
+
+if ($row = mysqli_fetch_assoc($result1)) {
+    $pname = $row['pname'];
+    $phone = $row['phone'];
+    $rdocname = $row['rdocname'];
+    $billdate = $row['billdate'];
+    $totalPrice = $row['totalPrice'];
+    $totalAdj = $row['totalAdj'];
+    $gst = $row['gst'];
+    $billAmount = $row['billAmount'];
+    $paidAmount = $row['paidAmount'];
+    $balance = $row['balance'];
+    $status = $row['status'];
+    $rtime = $row['rtime'];
+    $age = $row['rage'];
+    $gender = $row['rsex'];
+    $add1 = $row['add1'];
+    $add2 = $row['add2'];
+    $city = $row['city'];
+    $opid = $row['opid'];
+} else {
+    echo "No data found for the provided rno and billno.";
+}
+
+    mysqli_stmt_close($stmt1);
+}
+
+
+
+$header = '
+</div><br><br><br><br><br><br><div class="container">
+<span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>
+    <div class="wrapper">
+        <div class="box a"><strong>Name:</strong> &nbsp;&nbsp;<span class="txt">' . $pname . '</span></div>
+        <div class="box b" id="age"><strong>Age & Gender:</strong> &nbsp;&nbsp;&nbsp;<span class="txt">' . $age . ' / ' . $gender . '</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box a"><strong>Reg No:</strong>&nbsp;<span class="txt"> ' . $rno1 . '</span></div>
+        <div class="box b" id="reg_date"><strong>Bill Date: </strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $billdate . '</div>
+    </div>
+    <div class="wrapper">
+        <div class="box a"><strong>OP Id :</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="txt">' . $opid . '</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box b" id="reg_date"><strong>Dr.: </strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $rdocname . '</div>
+    </div>
+    <div class="wrapper">
+        <div class="box a"><strong>Bill No :</strong>&nbsp;&nbsp;&nbsp;<span class="txt">' . $billno1 . '</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box b" id="reg_date"><strong>Address: </strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $add1 . ',&nbsp;' . $city . '</div>
+    </div>
+    <span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>
+</div><br><br><br>';
+$html2 = '<table id="myTable" style="margin: 0 auto; padding: 0px;">
+    <thead>
+        <tr>
+            <th style="padding: 0 20px; ">Sr. No.</th>
+            <th style="padding: 0 ; ">Description</th>
+            <th style="padding: 0 60px; ">Qty</th>
+            <th style="padding: 0 60px; ">Amount</th>
+        </tr>
+    </thead>
+    <tbody><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>';
+    $sql = "SELECT b.servname, b.servrate
+    FROM returnBilling AS b 
+    WHERE b.rno = '$rno1' AND b.billno = '$billno1'
+    GROUP BY b.servname, b.servrate";
+
+$result = mysqli_query($conn, $sql);
+$sno = 0;
+if ($result === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
+
+// Initialize subtotal and footer
+$subtotal = 0;
+$footer = '';
+
+// Count the total number of rows returned from the SQL query
+$totalRows = mysqli_num_rows($result);
+$rowCount = 0;
+
+while ($row = mysqli_fetch_array($result)) {
+    $sno++;
+    $servname = $row['servname'];
+    $servrate = $row['servrate'];
+
+    // Add row to HTML
+    $html2 .= '<tr>
+<td style="padding: 0 20px; text-transform: uppercase;">' . $sno . '.</td>
+<td style="padding: 0 ; text-transform: uppercase;">' . $servname . '</td>
+<td style="padding: 0 60px; text-transform: uppercase;">1</td>
+<td style="padding: 0 60px; text-transform: uppercase;">' . $servrate . '.00</td>
+</tr>';
+    // $subtotal += $servrate;
+    $rowCount++;
+    if ($rowCount % 6 == 0) {
+        $html2 .= '</tbody></table><pagebreak/><div class="next-page" style="padding-top: 55mm;"></div><table id="myTable" style="margin: 0 auto;">
+        <tbody><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span><tr>
+        <th style="padding: 0 90px; "></th>
+        <th style="padding: 0px  60px"></th>
+        <th style="padding: 0px 20px; "></th>
+        <th style="padding: 0px 20px; "></th>
+        </tr><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>';
+        $footer .= '<div id="html_footer"><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>Contd..</div>';
+    }
+}
+$html2 .= '</tbody></table>';
+
+$Last_footer = '</div><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span><div class="container1">
+    <div class="wrapper">
+        <div class="box a">Total Amount &nbsp;&nbsp;<span class="txt">₹ ' . $billAmount . '</span></div>
+        <div class="box b" id="age">Less Adjusted: &nbsp;&nbsp;&nbsp;<span class="txt">₹' . ($totalAdj !== NULL ? $totalAdj : "₹ 0.00") . '</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box a">Net Payable:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="txt">₹' . $paidAmount . '.00</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box b" id="reg_date">Balance/Due: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;₹' . $balance . '</div>
+    </div>
+    <div class="wrapper">
+        <div class="box a">Mode:&nbsp;&nbsp;&nbsp;<span class="txt">' . $status . '</span></div>
+    </div>
+    <div class="wrapper">
+        <div class="box b" id="reg_date">Rupees: '.getIndianCurrency($billAmount).' </div>
+    </div>
+</div><span>----------------------------------------------------------------------------------------------------------------------------------------------------</span>';
+$mpdf->SetHeader('');
+$mpdf->SetHTMLHeader($header);
+$mpdf->SetFooter('');
+$mpdf->SetHTMLFooter($footer);
+$footerStyles = "<style>
+#html_footer {
+    position: fixed;
+    bottom: -5;
+    width: 100%;
+    text-align: right;
+}
+</style>";
+$mpdf->WriteHTML($footerStyles);
+$mpdf->WriteHTML('<br><br><br><br><br><br><br><br><br><h5 style="text-align: center;"></h5>');
+$mpdf->WriteHTML($html2);
+$mpdf->SetFooter('');
+$mpdf->SetHTMLFooter($Last_footer);
+// $pdf->SetTitle('Bill Cum Receipt');
+
+// $mpdf-> AddPage();
+// $mpdf-> AddPage();
+$css = file_get_contents('css/pdfcss.css');
+$mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+// remove header footer line border
+$mpdf->defaultheaderline = 0;
+$mpdf->defaultfooterline = 0;
+$mpdf->Output();

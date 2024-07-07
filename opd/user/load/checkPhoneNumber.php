@@ -1,21 +1,49 @@
 <?php
-include ('../../../db_conn.php');
+// Include database connection
+include('../../../db_conn.php');
+
+// Check if 'phoneNumber' is set in GET data
 if(isset($_GET['phoneNumber'])) {
+    // Sanitize and assign GET variable
     $phoneNumber = $_GET['phoneNumber'];
     
-    $sql = "SELECT COUNT(*) as count FROM registration WHERE phone = ?";
-    $stmt = sqlsrv_prepare($conn, $sql, array(&$phoneNumber));
+    // SQL query to count rows where phone number matches
+    $sql = "SELECT COUNT(*) AS count FROM registration WHERE phone = ?";
     
-    if (sqlsrv_execute($stmt)) {
-        $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
-        if ($row['count'] > 0) {
+    // Initialize statement object
+    $stmt = mysqli_prepare($conn, $sql);
+    if (!$stmt) {
+        die("Error: " . mysqli_error($conn));
+    }
+    
+    // Bind parameter to statement
+    mysqli_stmt_bind_param($stmt, "s", $phoneNumber);
+    
+    // Execute statement
+    mysqli_stmt_execute($stmt);
+    
+    // Get result set
+    $result = mysqli_stmt_get_result($stmt);
+    
+    // Check if query execution was successful
+    if (!$result) {
+        echo "error_executing";
+    } else {
+        // Fetch row from the result set
+        $row = mysqli_fetch_assoc($result);
+        
+        // Check if a row was fetched and count > 0
+        if ($row && $row['count'] > 0) {
             echo "exists";
         } else {
             echo "not_exists";
         }
-    } else {
-        echo "error_executing";
     }
+    
+    // Close statement and connection
+    mysqli_stmt_close($stmt);
+    mysqli_close($conn);
 } else {
     echo "error_no_phoneNumber";
 }
+?>

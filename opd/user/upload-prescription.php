@@ -10,9 +10,9 @@ include ('header.php');
 $id = $_GET['id'];
 $rno = $_GET['rno'];
 
-$sql = "SELECT TOP 1 id, rno, opid, rdate, rtime, rfname, CONCAT(rfname, ' ', COALESCE(rmname, ''), ' ', rlname) AS pname, rsex, rage, fname, phone, radd1, rcity, rdist, wamt, addedBy FROM registration WHERE id = '$id' AND rno = '$rno'";
-$res = sqlsrv_query($conn, $sql);
-while ($row = sqlsrv_fetch_array($res, SQLSRV_FETCH_ASSOC)) {
+$sql = "SELECT id, rno, opid, rdate, rtime, rfname, CONCAT(rfname, ' ', COALESCE(rmname, ''), ' ', rlname) AS pname, rsex, rage, fname, phone, radd1, rcity, rdist, wamt, addedBy, rdoc FROM registration WHERE id = '$id' AND rno = '$rno'";
+$res = mysqli_query($conn, $sql);
+while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) {
     $id = $row['id'];
     $opid = $row['opid'];
     $pname = $row['pname'];
@@ -51,7 +51,7 @@ while ($row = sqlsrv_fetch_array($res, SQLSRV_FETCH_ASSOC)) {
                         &nbsp;&nbsp;&nbsp;Name: &nbsp;&nbsp;&nbsp;
                         <?php echo $pname ?>&nbsp;/
                         <?php echo $age ?>&nbsp;/
-                        <?php echo $gender; ?>&nbsp;&nbsp;&nbsp;Doctor: &nbsp;
+                        <?php echo $gender; ?>&nbsp;&nbsp;&nbsp;Cont. Doctor: &nbsp;
                         <?php echo $doc ?>&nbsp;&nbsp;
                     </h4>
                 </div>
@@ -102,9 +102,10 @@ while ($row = sqlsrv_fetch_array($res, SQLSRV_FETCH_ASSOC)) {
 <?php
 
 // File Upload Code
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Filesave'])) {
     $fileCount = count($_FILES['file']['name']);
-    $tmp_dir = './uploads/';
+    $tmp_dir = './../user/uploads/';
     $img_upload = array();
     $upload_success = true;
 
@@ -114,11 +115,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Filesave'])) {
         $img_ext = pathinfo($img_name, PATHINFO_EXTENSION);
         $img_size = $_FILES['file']['size'][$i] / (1024 * 1024);
         $img_dir = $tmp_dir . $thambname . "." . $img_ext;
-
-        // Debugging: Print file information
-        echo "File name: " . $img_name . "<br>";
-        echo "File type: " . $_FILES['file']['type'][$i] . "<br>";
-        echo "File size: " . $img_size . " MB<br>";
 
         if ($img_size > 5) {
             echo "<script>
@@ -132,7 +128,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Filesave'])) {
         }
 
         if (move_uploaded_file($_FILES['file']['tmp_name'][$i], $img_dir)) {
-            $img_upload[] = 'uploads/' . $thambname . "." . $img_ext;
+            $img_upload[] = './../user/uploads/' . $thambname . "." . $img_ext;
         } else {
             $upload_success = false;
             break;
@@ -144,19 +140,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Filesave'])) {
         $rno = isset($_POST['rno']) ? $_POST['rno'] : '';
         $opid = isset($_POST['opid']) ? $_POST['opid'] : '';
         $sql = "UPDATE registration SET uploadPrescription = ? WHERE rno = ? AND opid = ?";
-        $params = array($img_upload_str, $rno, $opid);
-        $stmt = sqlsrv_prepare($conn, $sql, $params);
-
-        if (sqlsrv_execute($stmt)) {
-            echo "<script>
-                swal('Success!', 'Files uploaded successfully.', 'success');
-                setTimeout(function(){
-                    window.location.href = 'uploadPrescriptionPreview?rno=" . $rno . "&opid=" . $opid."';
-                }, 1000);
-            </script>";
+        $stmt = mysqli_prepare($conn, $sql);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "sss", $img_upload_str, $rno, $opid);
+            if (mysqli_stmt_execute($stmt)) {
+                echo "<script>
+                    swal('Success!', 'Files uploaded successfully.', 'success');
+                    setTimeout(function(){
+                        window.location.href = 'uploadPrescriptionPreview?rno=" . htmlspecialchars($rno) . "&opid=" . htmlspecialchars($opid) . "';
+                    }, 1000);
+                </script>";
+            } else {
+                echo "<script>
+                    swal('Error!', 'Failed to upload files.', 'error');
+                    setTimeout(function(){
+                        window.location.href = window.location.href;
+                    }, 1000);
+                </script>";
+            }
+            mysqli_stmt_close($stmt);
         } else {
             echo "<script>
-                swal('Error!', 'Failed to upload files.', 'error');
+                swal('Error!', 'Failed to prepare statement.', 'error');
                 setTimeout(function(){
                     window.location.href = window.location.href;
                 }, 1000);
@@ -164,6 +169,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['Filesave'])) {
         }
     }
 }
+
 
 include ('footer.php');
 
